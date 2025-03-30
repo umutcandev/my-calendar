@@ -51,18 +51,18 @@ export default function DashboardLayout({
         <div className="container flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-2">
             <Calendar className="h-6 w-6" />
-            <h1 className="text-xl font-bold">Takvim Uygulaması</h1>
+            <h1 className="text-xl font-bold md:block hidden">Takvim Uygulaması</h1>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">
+            <span className="text-sm text-muted-foreground md:block hidden">
               {user?.telegram_username}
             </span>
             <button
               onClick={logoutUser}
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+              className="flex items-center gap-2 bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-md px-3 py-2"
             >
               <LogOut className="h-5 w-5" />
-              <span>Çıkış Yap</span>
+              <span className="md:block hidden">Çıkış Yap</span>
             </button>
           </div>
         </div>
