@@ -22,7 +22,7 @@ Telegram ile giriş yapabileceğiniz, planlarınızı yönetebileceğiniz bir ta
 
 1. Repoyu klonlayın:
 ```bash
-git clone https://github.com/your-username/my-calendar.git
+git clone https://github.com/umutcandev/my-calendar.git
 cd my-calendar
 ```
 
