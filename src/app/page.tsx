@@ -1,103 +1,134 @@
-import Image from "next/image";
+"use client";
+
+import { Calendar } from "lucide-react";
+import { useState, useEffect } from "react";
+import { getCurrentUser, loginUser } from "@/lib/auth";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [username, setUsername] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
+  const router = useRouter();
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  useEffect(() => {
+    async function init() {
+      try {
+        const user = await getCurrentUser();
+        if (user) {
+          router.replace("/dashboard");
+        }
+      } catch (error) {
+        console.error("Auth check error:", error);
+      } finally {
+        setIsChecking(false);
+      }
+    }
+
+    init();
+  }, [router]);
+
+  const handleLogin = async () => {
+    if (!username.trim()) {
+      setError("Kullanıcı adı boş olamaz");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError("");
+      
+      // Önce kullanıcıyı veritabanına kaydet/güncelle
+      const user = await loginUser(username.trim());
+      if (!user) {
+        throw new Error("Kullanıcı oluşturulamadı");
+      }
+
+      // Sonra Telegram mesajını gönder
+      const response = await fetch("/api/auth/telegram", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: user.telegram_username }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (data.error) {
+          throw new Error(data.error);
+        }
+        throw new Error("Giriş işlemi sırasında bir hata oluştu");
+      }
+
+      setSuccess(true);
+    } catch (error) {
+      console.error("Login error:", error);
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("Beklenmeyen bir hata oluştu. Lütfen daha sonra tekrar deneyin.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && !loading && username.trim()) {
+      handleLogin();
+    }
+  };
+
+  if (isChecking) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Yükleniyor...</h1>
+          <p className="text-muted-foreground">Lütfen bekleyin.</p>
         </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center p-8">
+      <main className="flex flex-col items-center gap-8 text-center">
+        <div className="flex items-center gap-4">
+          <Calendar className="h-12 w-12" />
+          <h1 className="text-4xl font-bold">Takvim Uygulaması</h1>
+        </div>
+        <p className="text-lg text-muted-foreground">
+          Planlarınızı kolayca yönetin ve takip edin
+        </p>
+        
+        {success ? (
+          <div className="text-green-500">
+            Telegram'ınızı kontrol edin! Size bir giriş bağlantısı gönderdik.
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Telegram kullanıcı adınız"
+              className="rounded-lg border border-input bg-background px-4 py-2 text-foreground"
+              disabled={loading}
+            />
+            {error && <div className="text-red-500">{error}</div>}
+            <button
+              onClick={handleLogin}
+              disabled={loading || !username.trim()}
+              className="rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            >
+              {loading ? "Giriş yapılıyor..." : "Giriş Yap"}
+            </button>
+          </div>
+        )}
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
   );
 }

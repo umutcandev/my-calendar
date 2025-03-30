@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Takvim Uygulaması
 
-## Getting Started
+Telegram ile giriş yapabileceğiniz, planlarınızı yönetebileceğiniz bir takvim uygulaması.
 
-First, run the development server:
+## Özellikler
 
+- 📅 Takvim görünümü
+- 🔐 Telegram ile güvenli giriş
+- ✏️ Plan ekleme, düzenleme ve silme
+- 📱 Mobil uyumlu tasarım
+- 🌙 Karanlık tema desteği
+
+## Teknolojiler
+
+- Next.js 14
+- TypeScript
+- Tailwind CSS
+- Supabase
+- Telegram Bot API
+
+## Kurulum
+
+1. Repoyu klonlayın:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/your-username/my-calendar.git
+cd my-calendar
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Bağımlılıkları yükleyin:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. `.env.example` dosyasını `.env` olarak kopyalayın ve gerekli değişkenleri ayarlayın:
+```bash
+cp .env.example .env
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Geliştirme sunucusunu başlatın:
+```bash
+npm run dev
+```
 
-## Learn More
+## Çevre Değişkenleri
 
-To learn more about Next.js, take a look at the following resources:
+Uygulamanın çalışması için aşağıdaki çevre değişkenlerini ayarlamanız gerekmektedir:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `TELEGRAM_BOT_TOKEN`: Telegram Bot Token
+- `TELEGRAM_ALLOWED_USERNAME`: İzin verilen Telegram kullanıcı adı
+- `TELEGRAM_USER_ID`: Telegram kullanıcı ID'si
+- `NEXT_PUBLIC_SUPABASE_URL`: Supabase URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase Anonim Anahtar
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Vercel'e Deploy Etme
 
-## Deploy on Vercel
+1. GitHub reposunu Vercel'e bağlayın
+2. Çevre değişkenlerini Vercel'de ayarlayın
+3. Deploy edin!
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Lisans
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT
