@@ -1,9 +1,10 @@
 "use client";
 
+import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 
-export default function CallbackPage() {
+function CallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -19,11 +20,24 @@ export default function CallbackPage() {
   }, [router, searchParams]);
 
   return (
+    <div className="text-center">
+      <h1 className="text-2xl font-bold">Yönlendiriliyor...</h1>
+      <p className="text-muted-foreground">Lütfen bekleyin.</p>
+    </div>
+  );
+}
+
+export default function CallbackPage() {
+  return (
     <div className="flex min-h-screen items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold">Yönlendiriliyor...</h1>
-        <p className="text-muted-foreground">Lütfen bekleyin.</p>
-      </div>
+      <Suspense fallback={
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Yükleniyor...</h1>
+          <p className="text-muted-foreground">Lütfen bekleyin.</p>
+        </div>
+      }>
+        <CallbackContent />
+      </Suspense>
     </div>
   );
 } 
