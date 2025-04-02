@@ -1,109 +1,115 @@
 import { supabase } from "./supabase";
+import Cookies from "js-cookie";
 
 export interface User {
   id: string;
   telegram_username: string;
+  verified?: boolean;
 }
 
 export async function getCurrentUser(): Promise<User | null> {
   if (typeof window === "undefined") return null;
   
   try {
-    const storedUser = localStorage.getItem("user");
-    if (!storedUser) return null;
-    
-    const user = JSON.parse(storedUser);
-    if (!user || !user.id || !user.telegram_username) {
-      localStorage.removeItem("user");
+    const userId = Cookies.get("userId");
+    const verified = Cookies.get("verified") === "true";
+    if (!userId || !verified) return null;
+
+    const { data: user, error } = await supabase
+      .from("users")
+      .select()
+      .eq("id", userId)
+      .single();
+
+    if (error || !user) {
+      Cookies.remove("userId");
+      Cookies.remove("verified");
       return null;
     }
-    
-    return user;
+
+    return { ...user, verified };
   } catch (error) {
-    console.error("LocalStorage error:", error);
+    console.error("Auth error:", error);
     return null;
   }
 }
 
-export async function loginUser(username: string): Promise<User> {
-  if (!username) {
-    throw new Error("Kullanıcı adı gereklidir");
-  }
-
+export async function loginUser(username: string): Promise<User | null> {
   try {
-    // Önce mevcut kullanıcıyı kontrol et
-    const { data: existingUser, error: selectError } = await supabase
-      .from("users")
-      .select("id, telegram_username")
-      .eq("telegram_username", username)
-      .single();
+    const response = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username }),
+    });
 
-    if (selectError && selectError.code !== "PGRST116") {
-      console.error("Select error:", selectError);
-      throw new Error("Kullanıcı bilgileri alınırken bir hata oluştu");
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Giriş işlemi başarısız oldu");
     }
 
-    if (existingUser) {
-      // Kullanıcı bulundu, last_login'i güncelle
-      const { error: updateError } = await supabase
-        .from("users")
-        .update({ last_login: new Date().toISOString() })
-        .eq("id", existingUser.id);
-
-      if (updateError) {
-        console.error("Update error:", updateError);
-      }
-
-      if (typeof window !== "undefined") {
-        localStorage.setItem("user", JSON.stringify(existingUser));
-      }
-      return existingUser;
+    // Telegram mesajı gönderildiğinde user bilgisi gelmeyecek
+    if (data.message) {
+      return null;
     }
 
-    // Kullanıcı yoksa yeni kullanıcı oluştur
-    const { data: newUser, error: insertError } = await supabase
-      .from("users")
-      .insert([{ 
-        telegram_username: username,
-        last_login: new Date().toISOString()
-      }])
-      .select("id, telegram_username")
-      .single();
-
-    if (insertError) {
-      console.error("Insert error:", insertError);
-      throw new Error(
-        insertError.code === "23505" 
-          ? "Bu kullanıcı adı zaten kullanılıyor" 
-          : "Kullanıcı oluşturulurken bir hata oluştu"
-      );
+    // Eğer user bilgisi geldiyse cookie'yi ayarla
+    if (data.user) {
+      Cookies.set("userId", data.user.id, { expires: 1, secure: true });
+      return data.user;
     }
 
-    if (!newUser) {
-      throw new Error("Kullanıcı oluşturulamadı");
-    }
-
-    if (typeof window !== "undefined") {
-      localStorage.setItem("user", JSON.stringify(newUser));
-    }
-
-    return newUser;
+    return null;
   } catch (error) {
     console.error("Login error:", error);
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error("Giriş işlemi sırasında beklenmeyen bir hata oluştu");
+    throw error; // Hatayı yukarı fırlat
   }
 }
 
-export function logoutUser() {
+export async function verifyUser(token: string): Promise<boolean> {
+  try {
+    const response = await fetch("/api/auth/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Doğrulama başarısız");
+    }
+
+    if (data.verified && data.user) {
+      Cookies.set("userId", data.user.id, { expires: 1, secure: true });
+      Cookies.set("verified", "true", { expires: 1, secure: true });
+      return true;
+    }
+
+    throw new Error("Doğrulama başarısız");
+  } catch (error: any) {
+    console.error("Verify error:", error);
+    throw error;
+  }
+}
+
+export async function logoutUser() {
   if (typeof window !== "undefined") {
     try {
-      localStorage.removeItem("user");
-    } catch (error) {
-      console.error("Logout error:", error);
+      const userId = Cookies.get("userId");
+      if (userId) {
+        await fetch("/api/auth/logout", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ userId })
+        }).catch(console.error); // Hata olsa bile devam et
+      }
+    } finally {
+      Cookies.remove("userId");
+      Cookies.remove("verified");
+      window.location.href = "/";
     }
-    window.location.href = "/";
   }
 } 

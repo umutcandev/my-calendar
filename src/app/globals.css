@@ -56,4 +56,31 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+@keyframes floating-blur {
+  0% {
+    transform: translateX(-10px);
+    opacity: 0.2;
+  }
+  25% {
+    transform: translateX(10px);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translateX(10px);
+    opacity: 0.2;
+  }
+  75% {
+    transform: translateX(-10px);
+    opacity: 0.3;
+  }
+  100% {
+    transform: translateX(-10px);
+    opacity: 0.2;
+  }
+}
+
+.floating-blur {
+  animation: floating-blur 8s ease-in-out infinite;
 } 

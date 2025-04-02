@@ -69,6 +69,11 @@ export function PlanDialog({ onPlanAdded, selectedDate, plan, mode = "create" }:
 
       const currentDateTime = getCurrentDateTime(selectedDate);
 
+      // Geçmiş tarihlere plan eklemeyi engelle
+      if (currentDateTime < new Date()) {
+        throw new Error("Geçmiş tarihlere plan ekleyemezsiniz");
+      }
+
       if (mode === "edit" && plan) {
         const { error } = await supabase
           .from("plans")
@@ -100,8 +105,9 @@ export function PlanDialog({ onPlanAdded, selectedDate, plan, mode = "create" }:
       setDescription("");
       setOpen(false);
       onPlanAdded?.();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Plan işlemi hatası:", error);
+      alert(error.message || "Plan eklenirken bir hata oluştu");
     } finally {
       setLoading(false);
     }

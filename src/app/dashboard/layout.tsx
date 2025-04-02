@@ -15,26 +15,45 @@ export default function DashboardLayout({
   const router = useRouter();
 
   useEffect(() => {
-    async function init() {
+    let mounted = true;
+
+    async function checkAuth() {
       try {
         const currentUser = await getCurrentUser();
+        
+        if (!mounted) return;
+
         if (!currentUser) {
           router.replace("/");
           return;
         }
+
         setUser(currentUser);
       } catch (error) {
         console.error("Auth error:", error);
-        router.replace("/");
+        if (mounted) {
+          router.replace("/");
+        }
       } finally {
-        setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     }
 
-    init();
+    checkAuth();
+
+    return () => {
+      mounted = false;
+    };
   }, [router]);
 
-  if (isLoading) {
+  const handleLogout = () => {
+    setIsLoading(true);
+    logoutUser();
+  };
+
+  if (isLoading || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
@@ -55,10 +74,10 @@ export default function DashboardLayout({
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground md:block hidden">
-              {user?.telegram_username}
+              {user.telegram_username}
             </span>
             <button
-              onClick={logoutUser}
+              onClick={handleLogout}
               className="flex items-center gap-2 bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-md px-3 py-2"
             >
               <LogOut className="h-5 w-5" />
